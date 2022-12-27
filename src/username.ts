@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker'
 import slugify from 'slugify'
+import * as crypto from 'crypto'
 
 let opts = { replacement: '' }
 
@@ -21,4 +22,9 @@ export function username() {
   }
 
   return (color + cat).slice(0, 16)
+}
+
+
+export function gen8() {
+  return crypto.randomBytes(4).toString('hex').slice(0, 8);
 }
