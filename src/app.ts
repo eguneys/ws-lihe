@@ -11,10 +11,26 @@ export class LiError {
   constructor(readonly err: string) {}
 }
 
+export type LiSend = (t: string, d: any) => void
+
 export class LiClient {
   static make = (path: string) => new LiClient(path)
 
   constructor(readonly path: string) {}
+
+  send!: LiSend
+
+  _onConnected(send: LiSend, request: ClientRequest) {
+    this.send = send
+  }
+
+  _onMessage(data: any) {
+    console.log(data)
+  }
+
+  _onError(e: any) {
+    console.log(e)
+  }
 }
 
 export function authenticate(request: IncomingMessage, cb: (err?: LiError, client?: LiClient) => void) {
@@ -42,9 +58,23 @@ export function app(port: number, env: string) {
 
 
   wss.on('connection', function connection(ws: WebSocket, request: ClientRequest, client: LiClient) {
-    console.log('connected', client)
-    ws.on('message', function message(data) {
-      console.log('received', data)
+    client._onConnected((t: string, d: any) => {
+      ws.send(JSON.stringify({ t, d }))
+    }, request)
+    ws.on('message', function message(data: any) {
+      try {
+        let _ = JSON.parse(data.toString())
+
+        if (_.t === 'p') {
+          ws.send('0')
+          ws.send(JSON.stringify({t: 'nb_users', d: 30}))
+          return
+        }
+
+        client._onMessage(_)
+      } catch (e) {
+        client._onError(e)
+      }
     })
   })
 
